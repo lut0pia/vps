@@ -1,0 +1,65 @@
+services:
+  minecraft:
+    container_name: minecraft
+    image: itzg/minecraft-server
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    ports:
+      - "25565:25565"
+    environment:
+      EULA: "TRUE"
+      USE_AIKAR_FLAGS: "true"
+    volumes:
+      - ./minecraft:/data
+  restapi:
+    container_name: restapi
+    build: restapi
+    restart: unless-stopped
+    ports:
+      - "24310:80"
+  recordscratch-server:
+    container_name: recordscratch-server
+    build:
+      context: recordscratch
+      dockerfile: server.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "18535:80"
+  recordscratch-webclient:
+    container_name: recordscratch-webclient
+    build:
+      context: recordscratch
+      dockerfile: webclient.Dockerfile
+    restart: unless-stopped
+    ports:
+      - "18536:80"
+  radicale:
+    image: tomsquest/docker-radicale
+    container_name: radicale
+    ports:
+      - 127.0.0.1:5232:5232
+    init: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
+      - KILL
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          pids: 50
+    healthcheck:
+      test: curl -f http://127.0.0.1:5232 || exit 1
+      interval: 30s
+      retries: 3
+    restart: unless-stopped
+    volumes:
+      - ./radicale:/data
+      - ./radicale:/config:ro
